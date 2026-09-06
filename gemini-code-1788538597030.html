@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Louis QIN's Universe - Interactive Workspace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
+            color: #fff;
+            background-color: #1a1817;
+        }
+
+        .desktop-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #2b2622;
+            background-image: url('个人网站底图.jpg');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            z-index: 1;
+        }
+
+        .desktop-bg::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        /* 标语区 */
+        .header-title {
+            position: absolute; top: 5%; width: 100%;
+            text-align: center; z-index: 2; pointer-events: none; padding: 0 20px;
+        }
+
+        .header-title h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem; font-weight: 400;
+            letter-spacing: 1.5px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            margin-bottom: 8px;
+        }
+
+        .header-title p {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem; font-style: italic;
+            letter-spacing: 0.8px; opacity: 0.92;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+        }
+
+        /* ========================================= */
+        /* 背景红圈锚点花朵 (Hotspot Flowers) */
+        /* ========================================= */
+        
+        .flower-hotspot {
+            position: absolute; z-index: 10; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .flower-shape-wrap {
+            width: 68px; height: 68px; position: relative;
+            display: flex; align-items: center; justify-content: center;
+            filter: drop-shadow(0 4px 15px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .journal-flower { width: 60px; height: 60px; position: relative; }
+
+        .petal {
+            position: absolute; top: 50%; left: 50%;
+            width: 20px; height: 35px;
+            background: linear-gradient(180deg, #ffffff 0%, #f3eae1 100%);
+            border-radius: 50px; border: 1.8px solid rgba(255, 255, 255, 0.95);
+            margin-top: -17.5px; margin-left: -10px; transform-origin: center center;
+        }
+
+        .petal:nth-child(1) { transform: rotate(0deg) translateY(-13px); }
+        .petal:nth-child(2) { transform: rotate(72deg) translateY(-13px); }
+        .petal:nth-child(3) { transform: rotate(144deg) translateY(-13px); }
+        .petal:nth-child(4) { transform: rotate(216deg) translateY(-13px); }
+        .petal:nth-child(5) { transform: rotate(288deg) translateY(-13px); }
+
+        .flower-center {
+            position: absolute; top: 50%; left: 50%;
+            width: 18px; height: 18px;
+            background: radial-gradient(circle, #e8c6a0 0%, #cba075 100%);
+            border: 2px solid #fff; border-radius: 50%;
+            transform: translate(-50%, -50%); box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); z-index: 2;
+        }
+
+        .flower-label {
+            position: absolute; top: -38px; white-space: nowrap;
+            font-size: 0.85rem; color: #ffffff; font-weight: 500; letter-spacing: 0.5px; 
+            background: rgba(30, 26, 22, 0.9); padding: 5px 13px; border-radius: 12px;
+            backdrop-filter: blur(8px); border: 1px solid rgba(255, 225, 195, 0.45);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); opacity: 0;
+            transform: translateY(8px) scale(0.9); pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .flower-hotspot:hover { z-index: 30; }
+        .flower-hotspot:hover .flower-label { opacity: 1; transform: translateY(0) scale(1); }
+        .flower-hotspot:hover .flower-shape-wrap {
+            transform: scale(1.22);
+            filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 12px rgba(255, 235, 215, 0.8));
+        }
+
+        .spot-about-me { top: 50%; left: 17%; }
+        .spot-internship { top: 48%; left: 28%; }
+        .spot-school { top: 46%; left: 67%; }
+        .spot-life { top: 43%; left: 77%; }
+        .spot-contact { top: 54%; left: 82%; }
+
+        /* ========================================= */
+        /* 通用弹窗遮罩 */
+        /* ========================================= */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(14px);
+            z-index: 100; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: all 0.35s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .card-close-btn {
+            position: absolute; top: 20px; right: 20px; width: 16px; height: 16px;
+            background: #ff5f56; border-radius: 50%; cursor: pointer; border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3); z-index: 10;
+            transition: transform 0.2s ease;
+        }
+        .card-close-btn:hover { transform: scale(1.2); }
+
+        /* ========================================= */
+        /* Internship 虚拟大桌面 (Enlarged Workspace) */
+        /* ========================================= */
+        #internshipOverlay { z-index: 200; display: none; opacity: 0; transition: opacity 0.35s ease; }
+        #internshipOverlay.active { display: flex; opacity: 1; }
+
+        .workspace-container {
+            width: 95%; max-width: 1240px; height: 88vh; max-height: 780px;
+            background: linear-gradient(145deg, #231f1c 0%, #151210 100%);
+            border: 1px solid rgba(255, 220, 180, 0.25);
+            border-radius: 32px; position: relative; overflow: hidden;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.9), inset 0 1px 2px rgba(255, 255, 255, 0.2);
+            display: flex; flex-direction: column; align-items: center; padding: 28px 24px;
+        }
+
+        .workspace-header { text-align: center; z-index: 5; margin-bottom: 5px; }
+        .workspace-title { font-size: 1.8rem; font-weight: 700; color: #ffffff; letter-spacing: 0.5px; }
+        .workspace-subtitle { font-size: 0.88rem; color: #d4c4b5; margin-top: 4px; }
+
+        /* 2.5D 大桌面场景 */
+        .desk-scene {
+            position: relative; width: 100%; flex-grow: 1;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* 扩张后的木质桌面 */
+        .desk-surface {
+            position: absolute; bottom: 4%; width: 96%; height: 78%;
+            background: linear-gradient(180deg, #4f3b2d 0%, #36281e 100%);
+            border-radius: 24px; border: 3px solid #684f3d;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.7), inset 0 2px 12px rgba(255,255,255,0.12);
+            transform: perspective(900px) rotateX(15deg);
+        }
+
+        /* 桌面纹理与皮质鼠标垫 */
+        .desk-mat {
+            position: absolute; bottom: 12%; width: 68%; height: 55%;
+            background: #1e1b18; border-radius: 16px; border: 1px solid rgba(255,255,255,0.06);
+            transform: perspective(900px) rotateX(15deg);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+
+        /* 交互物品 & 背景装饰物统一样式 */
+        .desk-item {
+            position: absolute; cursor: pointer; z-index: 10;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .decor-item {
+            position: absolute; pointer-events: none; z-index: 8;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            filter: drop-shadow(0 8px 15px rgba(0,0,0,0.4));
+        }
+
+        /* Tooltip 悬浮标签 */
+        .item-tooltip {
+            position: absolute; top: -42px; white-space: nowrap;
+            background: rgba(22, 18, 15, 0.94); color: #ffe6ce;
+            padding: 7px 16px; border-radius: 12px; font-size: 0.85rem; font-weight: 700;
+            border: 1px solid rgba(232, 198, 160, 0.65);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6); opacity: 0;
+            transform: translateY(8px) scale(0.9); pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 50;
+        }
+
+        /* 呼吸发光光晕 (Glow Aura) */
+        .item-glow {
+            position: absolute; width: 110%; height: 110%; border-radius: 50%;
+            background: radial-gradient(circle, rgba(232, 198, 160, 0.45) 0%, rgba(232, 198, 160, 0) 70%);
+            animation: pulseAura 2.2s infinite ease-in-out; pointer-events: none; z-index: -1;
+        }
+
+        @keyframes pulseAura {
+            0% { transform: scale(0.92); opacity: 0.4; }
+            50% { transform: scale(1.4); opacity: 0.9; }
+            100% { transform: scale(0.92); opacity: 0.4; }
+        }
+
+        .desk-item:hover { z-index: 40; transform: translateY(-12px) scale(1.1); }
+        .desk-item:hover .item-tooltip { opacity: 1; transform: translateY(0) scale(1); }
+
+        /* --- 5 个核心交互物品 (含有发光与隐喻) --- */
+
+        /* 1. 电脑 (China Daily) - 放置在桌中央 */
+        .item-laptop { top: 12%; left: 34%; width: 330px; height: 230px; }
+        .laptop-screen {
+            width: 280px; height: 175px; background: #111; border: 5px solid #2d2621;
+            border-radius: 12px; overflow: hidden; position: relative;
+            box-shadow: 0 0 25px rgba(255, 200, 150, 0.25);
+        }
+        .laptop-screen img { width: 100%; height: 100%; object-fit: cover; }
+        .laptop-base {
+            width: 320px; height: 14px; background: linear-gradient(180deg, #777 0%, #444 100%);
+            border-radius: 0 0 10px 10px; margin-top: -2px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        /* 2. 口红 (Judydoll 橘朵) - 放置在电脑左前方的美妆盘旁 */
+        .item-lipstick { top: 58%; left: 24%; width: 50px; height: 95px; }
+        .lipstick-body {
+            width: 26px; height: 70px; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            border-radius: 6px; border: 1.5px solid #fff; position: relative;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+        }
+        .lipstick-tip {
+            position: absolute; top: -15px; left: 4px; width: 15px; height: 20px;
+            background: #e63946; border-radius: 6px 6px 0 0; clip-path: polygon(0 20%, 100% 0, 100% 100%, 0% 100%);
+        }
+
+        /* 3. 奶粉桶 (雀巢 Nestlé) - 放置在左上角/绿植旁 */
+        .item-milk { top: 18%; left: 18%; width: 100px; height: 125px; }
+        .milk-can {
+            width: 86px; height: 105px; background: linear-gradient(180deg, #4ea8de 0%, #0077b6 100%);
+            border-radius: 14px; border: 2.5px solid #e0f2fe; position: relative;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 10px 22px rgba(0,0,0,0.45);
+        }
+        .milk-cap { position: absolute; top: -8px; width: 90px; height: 15px; background: #fff; border-radius: 7px; }
+        .milk-label { font-size: 0.7rem; font-weight: 800; color: #fff; background: rgba(255,255,255,0.25); padding: 3px 10px; border-radius: 10px; }
+
+        /* 4. 运动相机 (Insta360 影石) - 放置在右侧笔记本旁 */
+        .item-camera { top: 52%; left: 68%; width: 80px; height: 110px; }
+        .camera-body {
+            width: 56px; height: 86px; background: linear-gradient(180deg, #2d3142 0%, #111 100%);
+            border-radius: 16px; border: 2.5px solid #a0aab2; position: relative;
+            display: flex; flex-direction: column; align-items: center; padding-top: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.45);
+        }
+        .camera-lens {
+            width: 36px; height: 36px; background: radial-gradient(circle, #00f5d4 0%, #05668d 70%, #000 100%);
+            border-radius: 50%; border: 3px solid #d8f3dc; box-shadow: 0 0 10px rgba(0,245,212,0.7);
+        }
+
+        /* 5. 工牌 (BlueFocus 蓝色光标) - 散落在桌右前方 */
+        .item-badge { top: 22%; left: 74%; width: 95px; height: 125px; }
+        .badge-strap { width: 5px; height: 48px; background: #e63946; border-radius: 3px; }
+        .badge-card {
+            width: 70px; height: 90px; background: #ffffff; border-radius: 10px;
+            border: 2px solid #ddd; position: relative; padding: 6px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center;
+        }
+        .badge-avatar { width: 30px; height: 30px; background: #333; border-radius: 50%; margin-top: 4px; }
+        .badge-line { width: 42px; height: 4px; background: #0077b6; margin-top: 10px; border-radius: 2px; }
+
+
+        /* --- 丰富的真实桌面生活感装饰物 --- */
+
+        /* 绿植 1：左上角的大盆绿植 */
+        .decor-plant-left { top: 6%; left: 6%; width: 130px; height: 180px; }
+        .plant-pot { width: 70px; height: 60px; background: #cbb29d; border-radius: 0 0 25px 25px; border-top: 6px solid #b39882; }
+        .plant-leaves { position: absolute; top: -10px; width: 120px; height: 120px; }
+        .leaf { position: absolute; background: #2d6a4f; border-radius: 50% 0 50% 0; border: 1px solid #52b788; }
+        .leaf:nth-child(1) { width: 50px; height: 50px; transform: rotate(-30deg); top: 10px; left: 10px; }
+        .leaf:nth-child(2) { width: 60px; height: 60px; transform: rotate(15deg); top: 0px; left: 45px; background: #40916c; }
+        .leaf:nth-child(3) { width: 45px; height: 45px; transform: rotate(-60deg); top: 40px; left: 0px; }
+        .leaf:nth-child(4) { width: 55px; height: 55px; transform: rotate(45deg); top: 35px; left: 60px; background: #1b4332; }
+
+        /* 绿植 2：右上角精细多肉 */
+        .decor-plant-right { top: 10%; left: 88%; width: 80px; height: 90px; }
+        .succulent-pot { width: 50px; height: 40px; background: #e07a5f; border-radius: 8px 8px 16px 16px; }
+        .succulent-top { width: 58px; height: 35px; background: #81b29a; border-radius: 50%; margin-top: -15px; border: 2px solid #f4f1de; }
+
+        /* 咖啡杯 */
+        .decor-coffee { top: 62%; left: 14%; width: 70px; height: 70px; }
+        .mug-body { width: 52px; height: 52px; background: #f4f1de; border-radius: 12px; position: relative; border: 2px solid #e0d8c3; box-shadow: 0 6px 12px rgba(0,0,0,0.3); }
+        .mug-liquid { position: absolute; top: 6px; left: 6px; width: 36px; height: 36px; background: #6f4e37; border-radius: 50%; }
+        .mug-handle { position: absolute; right: -12px; top: 12px; width: 14px; height: 26px; border: 3px solid #f4f1de; border-radius: 0 8px 8px 0; }
+
+        /* 笔记本与签字笔 */
+        .decor-notebook { top: 58%; left: 78%; width: 110px; height: 130px; }
+        .notebook-body { width: 95px; height: 115px; background: #3d5a80; border-radius: 8px; border-left: 6px solid #e06d53; box-shadow: 0 8px 18px rgba(0,0,0,0.4); position: relative; transform: rotate(-8deg); }
+        .notebook-bookmark { position: absolute; bottom: -8px; right: 20px; width: 12px; height: 25px; background: #ee6c4d; }
+        .pen-body { position: absolute; right: -10px; top: 20px; width: 8px; height: 100px; background: #e0a96d; border-radius: 4px; transform: rotate(12deg); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+
+        /* 台灯 */
+        .decor-lamp { top: 4%; left: 83%; width: 100px; height: 160px; }
+        .lamp-shade { width: 70px; height: 45px; background: #e07a5f; border-radius: 30px 30px 5px 5px; transform: rotate(-20deg); box-shadow: 0 0 25px rgba(224, 122, 95, 0.4); }
+
+        /* 眼镜 */
+        .decor-glasses { top: 65%; left: 60%; width: 70px; height: 35px; transform: rotate(15deg); }
+        .glasses-rim { width: 26px; height: 22px; border: 2px solid #d4a373; border-radius: 50%; display: inline-block; }
+        .glasses-bridge { width: 8px; height: 2px; background: #d4a373; display: inline-block; vertical-align: top; margin-top: 10px; }
+
+
+        /* ========================================= */
+        /* 实习详情故事卡片弹窗 (Modal - 左右结构) */
+        /* ========================================= */
+        #internDetailOverlay { z-index: 350; display: none; opacity: 0; transition: opacity 0.35s ease; }
+        #internDetailOverlay.active { display: flex; opacity: 1; }
+
+        .intern-detail-card {
+            width: 90%; max-width: 800px;
+            background: linear-gradient(135deg, #2c2520 0%, #1f1a17 100%);
+            border: 1px solid rgba(232, 198, 160, 0.45); border-radius: 26px;
+            padding: 28px; position: relative; box-shadow: 0 30px 80px rgba(0,0,0,0.88);
+            transform: scale(0.92); transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; gap: 24px; align-items: stretch;
+        }
+        #internDetailOverlay.active .intern-detail-card { transform: scale(1); }
+
+        /* 左侧照片容器 */
+        .intern-left-photo {
+            width: 320px; flex-shrink: 0; border-radius: 18px; overflow: hidden;
+            background: #151210; border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+        }
+        .intern-left-photo img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+
+        /* 右侧文本内容 */
+        .intern-right-content {
+            flex-grow: 1; display: flex; flex-direction: column; justify-content: center;
+        }
+
+        .intern-company-tag {
+            display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 0.78rem;
+            font-weight: 700; background: rgba(232, 198, 160, 0.2); color: #ffe6c9;
+            border: 1px solid rgba(232, 198, 160, 0.4); margin-bottom: 12px; align-self: flex-start;
+        }
+        .intern-title { font-size: 1.55rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+        .intern-role { font-size: 0.92rem; color: #c8b8aa; font-weight: 500; margin-bottom: 16px; }
+        .intern-highlights { font-size: 0.88rem; line-height: 1.6; color: #e8e1d9; margin-bottom: 16px; background: rgba(255,255,255,0.04); padding: 14px; border-radius: 14px; }
+        .intern-vibe { font-size: 0.85rem; font-style: italic; color: #c0b0a2; border-left: 3px solid #e8c6a0; padding-left: 12px; }
+
+        @media (max-width: 768px) {
+            .intern-detail-card { flex-direction: column; max-height: 85vh; overflow-y: auto; }
+            .intern-left-photo { width: 100%; height: 220px; }
+        }
+
+
+        /* ========================================= */
+        /* About Me 名片卡片 (Business Card) */
+        /* ========================================= */
+        #aboutOverlay { z-index: 150; }
+        .business-card {
+            width: 90%; max-width: 840px;
+            background: linear-gradient(180deg, #38312b 0%, #463e37 50%, #564c42 100%);
+            border-radius: 24px;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex; padding: 32px; gap: 32px; position: relative;
+            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: #f5f0eb;
+        }
+        #aboutOverlay.active .business-card { transform: scale(1); }
+
+        .card-left-photo {
+            width: 260px; height: 380px; background-color: #201b17; border-radius: 16px;
+            overflow: hidden; flex-shrink: 0; border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+        }
+        .card-left-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .card-right-info { flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .card-name-group { margin-bottom: 10px; }
+        .card-name { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 600; color: #ffffff; display: flex; align-items: baseline; gap: 10px; }
+        .card-name span { font-size: 1.1rem; font-weight: 400; color: #d4c8bd; font-family: 'Noto Sans SC', sans-serif; }
+        .card-pun { font-size: 0.82rem; color: #c0b2a4; font-style: italic; font-family: 'Playfair Display', serif; margin-top: 2px; }
+        .card-intro-text { font-size: 0.88rem; line-height: 1.5; color: #e8e1d9; margin-bottom: 14px; }
+
+        .pill-section { margin-bottom: 10px; }
+        .pill-title { font-size: 0.75rem; color: #bcaea0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-weight: 600; }
+        .pill-container { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        .pill { padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 500; transition: all 0.25s ease; }
+        .pill-gold {
+            background: linear-gradient(135deg, rgba(212, 175, 140, 0.25) 0%, rgba(180, 140, 100, 0.2) 100%);
+            border: 1px solid rgba(230, 195, 160, 0.55); color: #fceee3; cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); position: relative;
+        }
+        .pill-gold:hover {
+            background: linear-gradient(135deg, rgba(230, 195, 160, 0.45) 0%, rgba(200, 155, 110, 0.35) 100%);
+            border-color: rgba(255, 220, 180, 0.85); color: #ffffff; transform: translateY(-2px) scale(1.03);
+        }
+        .pill-silver { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); color: #c8bebd; }
+        .card-footer { border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 8px; font-size: 0.78rem; color: #b8ab9e; }
+
+        /* Other modals */
+        #kolVideosOverlay, #sportsOverlay, #travelOverlay, #clubOverlay, #hkuOverlay, #bisuOverlay {
+            z-index: 300; display: none; opacity: 0; transition: opacity 0.35s ease;
+        }
+        #kolVideosOverlay.active, #sportsOverlay.active, #travelOverlay.active, #clubOverlay.active, #hkuOverlay.active, #bisuOverlay.active {
+            display: flex; opacity: 1;
+        }
+
+        .kol-modal-container, .sports-modal-container, .travel-modal-container {
+            width: 92%; max-width: 1000px; background: rgba(30, 26, 23, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 24px; padding: 36px 28px 32px;
+            position: relative; box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+        }
+        .kol-modal-header { text-align: center; margin-bottom: 24px; }
+        .kol-modal-title { font-size: 1.7rem; font-weight: 800; color: #ffffff; }
+        .kol-modal-subtitle { font-size: 0.88rem; color: #b8aaa0; margin-top: 6px; }
+
+        .video-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .video-card { position: relative; aspect-ratio: 9 / 16; border-radius: 16px; overflow: hidden; background: #000; cursor: pointer; text-decoration: none; color: inherit; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: all 0.35s ease; }
+        .video-card:hover { transform: translateY(-8px) scale(1.02); border-color: rgba(232, 198, 160, 0.6); }
+        .card-thumb { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+        .card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 100%); z-index: 3; }
+        .platform-badge { position: absolute; top: 12px; left: 12px; z-index: 4; padding: 5px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; background: rgba(0,0,0,0.55); }
+        .platform-badge.instagram { color: #ff7a93; } .platform-badge.youtube { color: #ff4e4e; }
+        .card-info { position: absolute; bottom: 14px; left: 14px; right: 14px; z-index: 4; }
+        .views-tag { font-size: 1.15rem; font-weight: 800; color: #ffe6c9; }
+        .card-title { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.9); }
+
+        .sports-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 10px; }
+        .sports-card { width: 100%; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden; background: #1a1715; border: 1px solid rgba(255, 255, 255, 0.12); }
+        .sports-card img { width: 100%; height: 100%; object-fit: cover; }
+
+        .travel-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 10px; }
+        .travel-card { position: relative; aspect-ratio: 9 / 16; border-radius: 16px; overflow: hidden; background: #1a1715; border: 1px solid rgba(255, 255, 255, 0.14); }
+        .travel-card img { width: 100%; height: 100%; object-fit: cover; }
+        .travel-location-tag { position: absolute; top: 12px; left: 12px; z-index: 3; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; background: rgba(20, 18, 16, 0.65); }
+        .travel-card-title { position: absolute; bottom: 14px; left: 14px; z-index: 3; font-size: 1rem; font-weight: 700; color: #fff; }
+
+        .club-quiz-card { width: 90%; max-width: 440px; background: rgba(26, 20, 24, 0.95); border: 1px solid rgba(255, 180, 200, 0.25); border-radius: 24px; padding: 36px 30px; text-align: center; }
+        .quiz-title { font-size: 1.35rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .quiz-question { font-size: 0.92rem; color: #d0c2d4; margin-bottom: 22px; }
+        .quiz-input-group { display: flex; gap: 8px; margin-bottom: 12px; }
+        .quiz-input { flex-grow: 1; padding: 12px 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; outline: none; }
+        .quiz-submit-btn { padding: 12px 20px; border-radius: 12px; border: none; background: linear-gradient(135deg, #e8c6a0 0%, #cba075 100%); color: #1a1512; font-weight: 700; cursor: pointer; }
+        .quiz-error-msg { font-size: 0.8rem; color: #ff6b6b; min-height: 18px; }
+
+        .club-invite-card { width: 90%; max-width: 620px; background: linear-gradient(135deg, #2a2024 0%, #1d181c 100%); border: 1px solid rgba(255, 215, 170, 0.3); border-radius: 24px; padding: 24px; display: flex; align-items: center; gap: 24px; }
+        .club-photo-wrap { width: 220px; aspect-ratio: 9 / 16; border-radius: 16px; overflow: hidden; flex-shrink: 0; }
+        .club-photo-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .club-invite-text { font-size: 1.45rem; font-weight: 700; color: #fff; }
+
+        .hku-gallery-container, .bisu-gallery-container { width: 90%; max-width: 1100px; height: 55vh; display: flex; justify-content: center; align-items: center; position: relative; }
+        .hku-photo-card, .bisu-photo-card { width: 300px; height: 400px; background: #fff; border-radius: 12px; padding: 8px; position: absolute; top: 50%; left: 50%; opacity: 0; transition: all 0.6s ease; }
+        .hku-photo-card img, .bisu-photo-card img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+        #hkuOverlay.active .hku-photo-1 { opacity: 1; transform: translate(-105%, -50%) rotate(-1deg); }
+        #hkuOverlay.active .hku-photo-2 { opacity: 1; transform: translate(5%, -50%) rotate(1deg); }
+        #bisuOverlay.active .bisu-photo-1 { opacity: 1; transform: translate(-160%, -50%) rotate(-2deg); }
+        #bisuOverlay.active .bisu-photo-2 { opacity: 1; transform: translate(-50%, -50%) rotate(1deg); }
+        #bisuOverlay.active .bisu-photo-3 { opacity: 1; transform: translate(60%, -50%) rotate(-1deg); }
+    </style>
+</head>
+<body>
+
+    <div class="desktop-bg" id="mainBg"></div>
+
+    <div class="header-title">
+        <h1>Louis QIN's Universe</h1>
+        <p>Call me Louis Weitong, or just remember me as Louis Vuitton.</p>
+    </div>
+
+    <!-- 5 朵花锚点 -->
+    <div class="flower-hotspot spot-about-me" onclick="openAboutModal()">
+        <span class="flower-label">About Me</span>
+        <div class="flower-shape-wrap">
+            <div class="journal-flower">
+                <div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div>
+                <div class="flower-center"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flower-hotspot spot-internship" onclick="openInternshipModal()">
+        <span class="flower-label">My Internship</span>
+        <div class="flower-shape-wrap">
+            <div class="journal-flower">
+                <div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div>
+                <div class="flower-center"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flower-hotspot spot-school">
+        <span class="flower-label">My School</span>
+        <div class="flower-shape-wrap">
+            <div class="journal-flower">
+                <div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div>
+                <div class="flower-center"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flower-hotspot spot-life">
+        <span class="flower-label">My Life</span>
+        <div class="flower-shape-wrap">
+            <div class="journal-flower">
+                <div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div>
+                <div class="flower-center"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flower-hotspot spot-contact">
+        <span class="flower-label">Contact</span>
+        <div class="flower-shape-wrap">
+            <div class="journal-flower">
+                <div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div>
+                <div class="flower-center"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- Internship 虚拟大桌面 (Louis's Living Workspace) -->
+    <!-- ========================================= -->
+    <div class="modal-overlay" id="internshipOverlay" onclick="closeInternshipModal(event)">
+        <div class="workspace-container">
+            <button class="card-close-btn" onclick="forceCloseInternship()"></button>
+            
+            <div class="workspace-header">
+                <h2 class="workspace-title">🌿 Louis's Interactive Workspace</h2>
+                <p class="workspace-subtitle">寻找隐藏在温暖桌面上的 5 样发光线索，探索 Louis 的实习关卡！</p>
+            </div>
+
+            <div class="desk-scene">
+                <!-- 2.5D 3D 宽敞木质桌面 -->
+                <div class="desk-surface"></div>
+                <div class="desk-mat"></div>
+
+                <!-- 🌿 真实生活感装饰物品 (混杂其中) -->
+                <div class="decor-item decor-plant-left">
+                    <div class="plant-leaves">
+                        <div class="leaf"></div><div class="leaf"></div><div class="leaf"></div><div class="leaf"></div>
+                    </div>
+                    <div class="plant-pot"></div>
+                </div>
+
+                <div class="decor-item decor-plant-right">
+                    <div class="succulent-pot"></div>
+                    <div class="succulent-top"></div>
+                </div>
+
+                <div class="decor-item decor-coffee">
+                    <div class="mug-body">
+                        <div class="mug-liquid"></div>
+                        <div class="mug-handle"></div>
+                    </div>
+                </div>
+
+                <div class="decor-item decor-notebook">
+                    <div class="notebook-body"><div class="notebook-bookmark"></div></div>
+                    <div class="pen-body"></div>
+                </div>
+
+                <div class="decor-item decor-lamp">
+                    <div class="lamp-shade"></div>
+                </div>
+
+                <div class="decor-item decor-glasses">
+                    <div class="glasses-rim"></div><div class="glasses-bridge"></div><div class="glasses-rim"></div>
+                </div>
+
+
+                <!-- ⭐ 5 个代表实习的关键发光物品 -->
+
+                <!-- 1. 电脑 -> China Daily -->
+                <div class="desk-item item-laptop" onclick="showInternDetail('chinadaily')">
+                    <div class="item-tooltip">China Daily ✦ 中国日报</div>
+                    <div class="item-glow"></div>
+                    <div class="laptop-screen">
+                        <img src="模拟联合国.jpg" alt="模拟联合国" onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=500&q=80'">
+                    </div>
+                    <div class="laptop-base"></div>
+                </div>
+
+                <!-- 2. 口红 -> Judydoll 橘朵 -->
+                <div class="desk-item item-lipstick" onclick="showInternDetail('judydoll')">
+                    <div class="item-tooltip">Judydoll 橘朵 ✦</div>
+                    <div class="item-glow"></div>
+                    <div class="lipstick-body">
+                        <div class="lipstick-tip"></div>
+                    </div>
+                </div>
+
+                <!-- 3. 奶粉桶 -> 雀巢 Nestlé -->
+                <div class="desk-item item-milk" onclick="showInternDetail('nestle')">
+                    <div class="item-tooltip">雀巢 Nestlé ✦</div>
+                    <div class="item-glow"></div>
+                    <div class="milk-can">
+                        <div class="milk-cap"></div>
+                        <div class="milk-label">Nestlé</div>
+                    </div>
+                </div>
+
+                <!-- 4. 影石运动相机 -> Insta360 影石 -->
+                <div class="desk-item item-camera" onclick="showInternDetail('insta360')">
+                    <div class="item-tooltip">Insta360 影石 ✦</div>
+                    <div class="item-glow"></div>
+                    <div class="camera-body">
+                        <div class="camera-lens"></div>
+                    </div>
+                </div>
+
+                <!-- 5. 工牌 -> BlueFocus 蓝色光标 -->
+                <div class="desk-item item-badge" onclick="showInternDetail('bluefocus')">
+                    <div class="item-tooltip">BlueFocus 蓝色光标 ✦</div>
+                    <div class="item-glow"></div>
+                    <div class="badge-strap"></div>
+                    <div class="badge-card">
+                        <div class="badge-avatar"></div>
+                        <div class="badge-line"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 实习详情弹窗卡片 (改为左右两栏布局：左侧图片，右侧描述) -->
+    <div class="modal-overlay" id="internDetailOverlay" onclick="closeInternDetail(event)">
+        <div class="intern-detail-card">
+            <button class="card-close-btn" onclick="forceCloseInternDetail()"></button>
+            
+            <!-- 左侧照片展示 -->
+            <div class="intern-left-photo">
+                <img id="detailImage" src="" alt="实习照片">
+            </div>
+
+            <!-- 右侧实习描述 -->
+            <div class="intern-right-content">
+                <span class="intern-company-tag" id="detailCompanyTag">China Daily</span>
+                <h3 class="intern-title" id="detailTitle">中国日报社</h3>
+                <p class="intern-role" id="detailRole">国际新闻 / 品牌传播实习生</p>
+                <div class="intern-highlights" id="detailHighlights">
+                    • 参与国际青年交流与重大议题报道筹划<br>
+                    • 深入模拟联合国（MUN）现场，捕捉青年领袖高光时刻
+                </div>
+                <p class="intern-vibe" id="detailVibe">“在跨文化传播的前沿，学会用世界听得懂的语言讲故事。”</p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- About Me 灰棕名片弹窗 -->
+    <div class="modal-overlay" id="aboutOverlay" onclick="closeAboutModal(event)">
+        <div class="business-card">
+            <button class="card-close-btn" onclick="forceCloseAbout()"></button>
+            
+            <div class="card-left-photo">
+                <img id="avatarImg" src="About Me.jpg" alt="Louis Qin" onerror="this.style.opacity='0'">
+            </div>
+
+            <div class="card-right-info">
+                <div>
+                    <div class="card-name-group">
+                        <div class="card-name">Louis Qin <span>秦玮瞳</span></div>
+                        <div class="card-pun">"Call me Louis Weitong, or just remember me as Louis Vuitton."</div>
+                    </div>
+
+                    <p class="card-intro-text">
+                        👋 <b>你好，我是 Louis！</b><br>
+                        一个立足全球化视野与本土洞察，热衷于用爆款内容连接品牌与用户的 Marketing Builder。
+                    </p>
+
+                    <!-- 学历 -->
+                    <div class="pill-section">
+                        <div class="pill-title">🎓 Background</div>
+                        <div class="pill-container">
+                            <span class="pill pill-gold" onclick="openHkuGallery()">香港大学 · 市场营销硕士 ✦</span>
+                            <span class="pill pill-gold" onclick="openBisuGallery()">北京第二外国语学院 · 本科 ✦</span>
+                            <span class="pill pill-silver">跨文化传播</span>
+                        </div>
+                    </div>
+
+                    <!-- 硬核实力 -->
+                    <div class="pill-section">
+                        <div class="pill-title">⚡ Capabilities</div>
+                        <div class="pill-container">
+                            <span class="pill pill-gold" onclick="openKolVideosModal()">KOL / 达人整合传播 ✦ 3大爆款</span>
+                            <span class="pill pill-silver">爆款内容拆解与打造</span>
+                            <span class="pill pill-silver">出海营销 & 本土化策略</span>
+                        </div>
+                    </div>
+
+                    <!-- Vibes -->
+                    <div class="pill-section">
+                        <div class="pill-title">🍸 Life & Persona</div>
+                        <div class="pill-container">
+                            <span class="pill pill-silver">ENFJ 永动机 ⚡️</span>
+                            <span class="pill pill-silver">高共情情绪捕捉</span>
+                            <span class="pill pill-gold" onclick="openSportsModal()">运动 🏃‍♂️ ✦</span>
+                            <span class="pill pill-gold" onclick="openTravelModal()">旅游 ✈️ ✦</span>
+                            <span class="pill pill-gold" onclick="openClubModal()">Club 🪩 ✦</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <span>☕️ Coffee or Drink? 随时欢迎交流！</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 爆款视频弹窗 -->
+    <div class="modal-overlay" id="kolVideosOverlay" onclick="closeKolVideosModal(event)">
+        <div class="kol-modal-container">
+            <button class="card-close-btn" onclick="forceCloseKolVideos()"></button>
+            <div class="kol-modal-header">
+                <h2 class="kol-modal-title">🔥 KOL 爆款内容传播案例</h2>
+                <p class="kol-modal-subtitle">鼠标悬停可实时预览，点击跳转原生平台观看完整视频</p>
+            </div>
+            <div class="video-grid">
+                <a href="https://www.instagram.com/reel/Db8IhEwzYp8/?igsi=MXF4cndkcmY4azFkdQ==" target="_blank" class="video-card">
+                    <img src="34a0b6bb4060ea034c2a32c77b0432f.jpg" class="card-thumb" alt="跳伞 7.56M Views">
+                    <div class="card-overlay"></div>
+                    <div class="platform-badge instagram">📷 Instagram</div>
+                    <div class="card-info"><div class="views-tag">🔥 7.56M Views</div><div class="card-title">1. 极限跳伞视角</div></div>
+                </a>
+                <a href="https://youtube.com/shorts/l0WtcOvqk9A?si=DQur5Isih-AvHFHs" target="_blank" class="video-card" id="ytCard">
+                    <img src="https://img.youtube.com/vi/l0WtcOvqk9A/maxresdefault.jpg" class="card-thumb" alt="花丛运镜">
+                    <div class="card-overlay"></div>
+                    <div class="platform-badge youtube">▶ YouTube</div>
+                    <div class="card-info"><div class="views-tag">🔥 9.47M Views</div><div class="card-title">2. 花丛翻转运镜</div></div>
+                </a>
+                <a href="https://www.instagram.com/reel/DZj-prIyqgS/?igsi=dmd4YnJuZmltazFx" target="_blank" class="video-card">
+                    <img src="222ef289d7929a06bbbb55a1a8c0fce.jpg" class="card-thumb" alt="高桥跳水 5.42M Views">
+                    <div class="card-overlay"></div>
+                    <div class="platform-badge instagram">📷 Instagram</div>
+                    <div class="card-info"><div class="views-tag">🔥 5.42M Views</div><div class="card-title">3. 高桥极限跳水</div></div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 运动板块弹窗 -->
+    <div class="modal-overlay" id="sportsOverlay" onclick="closeSportsModal(event)">
+        <div class="sports-modal-container">
+            <button class="card-close-btn" onclick="forceCloseSports()"></button>
+            <div class="kol-modal-header"><h2 class="kol-modal-title">🏃‍♂️ Sports & Energy</h2></div>
+            <div class="sports-grid">
+                <div class="sports-card"><img src="运动 (1).jpg" alt="运动 1"></div>
+                <div class="sports-card"><img src="运动 (2).jpg" alt="运动 2"></div>
+                <div class="sports-card"><img src="运动 (3).jpg" alt="运动 3"></div>
+                <div class="sports-card"><img src="运动 (4).jpg" alt="运动 4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 旅游板块弹窗 -->
+    <div class="modal-overlay" id="travelOverlay" onclick="closeTravelModal(event)">
+        <div class="travel-modal-container">
+            <button class="card-close-btn" onclick="forceCloseTravel()"></button>
+            <div class="kol-modal-header"><h2 class="kol-modal-title">✈️ Travel & Footprints</h2></div>
+            <div class="travel-grid">
+                <div class="travel-card"><img src="扎金索斯.jpg" alt="扎金索斯"><div class="travel-location-tag">🇬🇷 Zakynthos</div><div class="travel-card-title">扎金索斯</div></div>
+                <div class="travel-card"><img src="圣托里尼.jpg" alt="圣托里尼"><div class="travel-location-tag">🇬🇷 Santorini</div><div class="travel-card-title">圣托里尼</div></div>
+                <div class="travel-card"><img src="泰国.jpg" alt="泰国"><div class="travel-location-tag">🇹🇭 Thailand</div><div class="travel-card-title">泰国</div></div>
+                <div class="travel-card"><img src="印尼.jpg" alt="印尼"><div class="travel-location-tag">🇮🇩 Indonesia</div><div class="travel-card-title">印尼</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Club 解谜弹窗 -->
+    <div class="modal-overlay" id="clubOverlay" onclick="closeClubModal(event)">
+        <div class="club-quiz-card" id="clubQuizCard">
+            <button class="card-close-btn" onclick="forceCloseClub()"></button>
+            <div class="quiz-title">🪩 Louis's Secret Vibe</div>
+            <div class="quiz-question">回答正确解锁彩蛋：<br><b>“我最喜欢的 Club 音乐风格是什么？”</b></div>
+            <div class="quiz-input-group">
+                <input type="text" id="clubAnswerInput" class="quiz-input" placeholder="输入音乐风格..." onkeydown="handleQuizKeyDown(event)">
+                <button class="quiz-submit-btn" onclick="checkClubAnswer()">解锁</button>
+            </div>
+            <div class="quiz-error-msg" id="quizErrorMsg"></div>
+        </div>
+        <div class="club-invite-card" id="clubInviteCard" style="display: none;">
+            <button class="card-close-btn" onclick="forceCloseClub()"></button>
+            <div class="club-photo-wrap"><img src="club.jpg" alt="Louis at Club"></div>
+            <div>
+                <span style="padding:4px 10px; border-radius:20px; font-size:0.75rem; background:rgba(232,198,160,0.2); color:#ffe6c9;">🎧 Hip-Hop Vibes Only</span>
+                <div class="club-invite-text" style="margin-top:12px;">你有一条来自 Louis 的 Club 邀约 🥂</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HKU 画廊 -->
+    <div class="modal-overlay" id="hkuOverlay" onclick="closeHkuGallery(event)">
+        <div class="hku-gallery-container">
+            <button class="card-close-btn" onclick="forceCloseHku()"></button>
+            <div class="hku-photo-card hku-photo-1"><img src="HKU Offer.jpg" alt="港大录取礼盒"></div>
+            <div class="hku-photo-card hku-photo-2"><img src="HKU Campus.jpg" alt="港大校园写真"></div>
+        </div>
+    </div>
+
+    <!-- BISU 画廊 -->
+    <div class="modal-overlay" id="bisuOverlay" onclick="closeBisuGallery(event)">
+        <div class="bisu-gallery-container">
+            <button class="card-close-btn" onclick="forceCloseBisu()"></button>
+            <div class="bisu-photo-card bisu-photo-1"><img src="北二外1.jpg" alt="草地证书写真"></div>
+            <div class="bisu-photo-card bisu-photo-2"><img src="北二外2.jpg" alt="人文楼前写真"></div>
+            <div class="bisu-photo-card bisu-photo-3"><img src="北二外3.jpg" alt="校史馆写真"></div>
+        </div>
+    </div>
+
+    <script>
+        // 实习数据（包含关联图片与详细介绍）
+        const internData = {
+            chinadaily: {
+                img: '中国日报_3.jpg',
+                tag: 'China Daily',
+                title: '中国日报社 (China Daily)',
+                role: '国际传播 / 品牌传播实习生',
+                highlights: '• 参与国际青年交流与重大议题报道筹划<br>• 深入模拟联合国（MUN）现场，捕捉青年领袖高光时刻与跨文化声音',
+                vibe: '“在跨文化传播的前沿，学会用世界听得懂的语言讲故事。”'
+            },
+            judydoll: {
+                img: '橘朵_3.jpg',
+                tag: 'Judydoll 橘朵',
+                title: 'Judydoll 橘朵',
+                role: '品牌营销 / 彩妆内容策划实习生',
+                highlights: '• 负责彩妆爆款新品种草策略与社媒内容洞察<br>• 深入研究女性情绪共鸣点，打造兼具美感与高转化率的色彩视觉',
+                vibe: '“玩转色彩与情绪，把生活美学转化为触手可及的爆款。”'
+            },
+            nestle: {
+                img: '雀巢_3.jpg',
+                tag: 'Nestlé 雀巢',
+                title: 'Nestlé 雀巢',
+                role: '整合营销 / 品牌运营实习生',
+                highlights: '• 参与母婴/健康营养板块的大促营销与消费者链路梳理<br>• 精细化用户画像拆解，助力品牌私域与公域声量双增长',
+                vibe: '“大厂快消的严谨体系，让我学会用数据落地每一个天马行空的创意。”'
+            },
+            insta360: {
+                img: '影石_3.jpg',
+                tag: 'Insta360 影石',
+                title: 'Insta360 影石',
+                role: '海外市场 / 极客内容传播实习生',
+                highlights: '• 挖掘全球户外与极限运动 KOL 资源，策划高能视角运镜短视频<br>• 助力品牌打造多条千万级/百万级播放量的出海爆款 Reel/Shorts',
+                vibe: '“记录酷炫的生活方式，把科技的魅力精准传达到全球玩家手中。”'
+            },
+            bluefocus: {
+                img: '蓝色光标_3.jpg',
+                tag: 'BlueFocus 蓝色光标',
+                title: 'BlueFocus 蓝色光标',
+                role: '公关策略 / 整合传播实习生',
+                highlights: '• 参与知名品牌公关全案策划，撰写精准传播文案<br>• 协助掌控项目执行节奏，无缝连接品牌方、KOL 与媒介资源',
+                vibe: '“公关人的必修课：在快节奏中保持冷静大脑与高效输出。”'
+            }
+        };
+
+        // Workspace 弹窗控制
+        function openInternshipModal() { document.getElementById('internshipOverlay').classList.add('active'); }
+        function closeInternshipModal(e) { if (e.target.id === 'internshipOverlay') document.getElementById('internshipOverlay').classList.remove('active'); }
+        function forceCloseInternship() { document.getElementById('internshipOverlay').classList.remove('active'); }
+
+        // 显示具体实习详情（包含图片与文字注入）
+        function showInternDetail(key) {
+            const data = internData[key];
+            if (!data) return;
+
+            document.getElementById('detailImage').src = data.img;
+            document.getElementById('detailCompanyTag').innerText = data.tag;
+            document.getElementById('detailTitle').innerText = data.title;
+            document.getElementById('detailRole').innerText = data.role;
+            document.getElementById('detailHighlights').innerHTML = data.highlights;
+            document.getElementById('detailVibe').innerText = data.vibe;
+
+            document.getElementById('internDetailOverlay').classList.add('active');
+        }
+
+        function closeInternDetail(e) { if (e.target.id === 'internDetailOverlay') forceCloseInternDetail(); }
+        function forceCloseInternDetail() { document.getElementById('internDetailOverlay').classList.remove('active'); }
+
+        // About Me 名片控制
+        function openAboutModal() { document.getElementById('aboutOverlay').classList.add('active'); }
+        function closeAboutModal(e) { if (e.target.id === 'aboutOverlay') document.getElementById('aboutOverlay').classList.remove('active'); }
+        function forceCloseAbout() { document.getElementById('aboutOverlay').classList.remove('active'); }
+
+        // KOL 爆款视频
+        function openKolVideosModal() { forceCloseAbout(); document.getElementById('kolVideosOverlay').classList.add('active'); }
+        function closeKolVideosModal(e) { if (e.target.id === 'kolVideosOverlay') forceCloseKolVideos(); }
+        function forceCloseKolVideos() { document.getElementById('kolVideosOverlay').classList.remove('active'); openAboutModal(); }
+
+        // 运动
+        function openSportsModal() { forceCloseAbout(); document.getElementById('sportsOverlay').classList.add('active'); }
+        function closeSportsModal(e) { if (e.target.id === 'sportsOverlay') forceCloseSports(); }
+        function forceCloseSports() { document.getElementById('sportsOverlay').classList.remove('active'); openAboutModal(); }
+
+        // 旅游
+        function openTravelModal() { forceCloseAbout(); document.getElementById('travelOverlay').classList.add('active'); }
+        function closeTravelModal(e) { if (e.target.id === 'travelOverlay') forceCloseTravel(); }
+        function forceCloseTravel() { document.getElementById('travelOverlay').classList.remove('active'); openAboutModal(); }
+
+        // Club
+        function openClubModal() {
+            forceCloseAbout();
+            document.getElementById('clubQuizCard').style.display = 'block';
+            document.getElementById('clubInviteCard').style.display = 'none';
+            document.getElementById('clubAnswerInput').value = '';
+            document.getElementById('quizErrorMsg').innerText = '';
+            document.getElementById('clubOverlay').classList.add('active');
+        }
+        function closeClubModal(e) { if (e.target.id === 'clubOverlay') forceCloseClub(); }
+        function forceCloseClub() { document.getElementById('clubOverlay').classList.remove('active'); openAboutModal(); }
+        function handleQuizKeyDown(e) { if (e.key === 'Enter') checkClubAnswer(); }
+        function checkClubAnswer() {
+            const val = document.getElementById('clubAnswerInput').value.trim().toLowerCase();
+            if (val === 'hiphop' || val === 'hip-hop' || val === 'hip hop') {
+                document.getElementById('clubQuizCard').style.display = 'none';
+                document.getElementById('clubInviteCard').style.display = 'flex';
+            } else {
+                document.getElementById('quizErrorMsg').innerText = '答案不对哦，再猜猜！💡 (提示: 6个字母)';
+            }
+        }
+
+        // HKU 画廊
+        function openHkuGallery() { forceCloseAbout(); document.getElementById('hkuOverlay').classList.add('active'); }
+        function closeHkuGallery(e) { if (e.target.id === 'hkuOverlay') forceCloseHku(); }
+        function forceCloseHku() { document.getElementById('hkuOverlay').classList.remove('active'); openAboutModal(); }
+
+        // BISU 画廊
+        function openBisuGallery() { forceCloseAbout(); document.getElementById('bisuOverlay').classList.add('active'); }
+        function closeBisuGallery(e) { if (e.target.id === 'bisuOverlay') forceCloseBisu(); }
+        function forceCloseBisu() { document.getElementById('bisuOverlay').classList.remove('active'); openAboutModal(); }
+    </script>
+</body>
+</html>
